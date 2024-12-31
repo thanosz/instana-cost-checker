@@ -34,7 +34,6 @@ func main() {
 	var maxallowed string
 	var threshold float64
 	var verbose bool
-
 	current_year, current_month, _ := time.Now().Date()
 
 	flag.Usage = func() {
@@ -43,9 +42,7 @@ func main() {
 		fmt.Printf("	instana-cost-checker -token TOKEN -endpoint unit-tenant.instana.io -maxallowed 7TB -threshold 0.7\n\n")
 		fmt.Printf("Options:\n")
 		flag.PrintDefaults()
-
 	}
-
 	flag.IntVar(&month, "month", int(current_month), "The month of the year to request data for (optional, skip for current month)")
 	flag.IntVar(&year, "year", int(current_year), "The year (optional, skip for current year)")
 	flag.StringVar(&token, "token", "", "The authentication token to use (required)")
@@ -55,7 +52,6 @@ func main() {
 	flag.BoolVar(&verbose, "verbose", false, "Verbose output for each day")
 	flag.Parse()
 	maxallowedBytes, _ := datasize.ParseString(maxallowed)
-	//fmt.Printf("Threshold %d \n", thres.Bytes())
 
 	if month < 1 || month > 12 || year > int(current_year) || len(token) == 0 || len(endpoint) == 0 || maxallowedBytes == 0 {
 		flag.Usage()
@@ -63,7 +59,6 @@ func main() {
 	}
 
 	url := "https://" + endpoint + "/api/instana/usage/api/" + strconv.Itoa(month) + "/" + strconv.Itoa(year)
-	apiToken := "apiToken " + token // Replace with your actual API token
 
 	// Create a new HTTP request
 	req, err := http.NewRequest("GET", url, nil)
@@ -73,7 +68,7 @@ func main() {
 	}
 
 	// Add the authorization header
-	req.Header.Add("Authorization", apiToken)
+	req.Header.Add("Authorization", "apiToken "+token)
 
 	// Make the HTTP request
 	client := &http.Client{}
@@ -111,7 +106,6 @@ func main() {
 		msec := entry.Time % 1000
 		timestamp := time.Unix(sec, msec*int64(time.Millisecond))
 		fmt.Fprintf(&buffer, "%s\n", timestamp)
-
 		for _, item := range entry.Items {
 			//fmt.Println(time.Unix(sec, msec*int64(time.Millisecond)))
 			switch item.Name {
@@ -127,7 +121,6 @@ func main() {
 			}
 		}
 	}
-
 	// Print the results
 	if verbose {
 		fmt.Println(&buffer)
@@ -137,14 +130,12 @@ func main() {
 	fmt.Printf("   otlp traces: %s\n", humanize.Bytes(totalBytesIngestedOltpTraces))
 	fmt.Printf("  agent traces: %s\n", humanize.Bytes(totalBytesIngestedTraces))
 
-	total := totalBytesIngestedInfrastructure + totalBytesIngestedOltpTraces + totalBytesIngestedTraces
-	fmt.Printf("\nTotal Usage for month %s: %s\n", time.Month(month), humanize.Bytes(total))
+	usage := totalBytesIngestedInfrastructure + totalBytesIngestedOltpTraces + totalBytesIngestedTraces
+	fmt.Printf("\nTotal Usage for month %s: %s (%d%%)\n", time.Month(month), humanize.Bytes(usage), int(float64(usage)/float64(maxallowedBytes.Bytes())*100))
 
-	if total >= uint64(float64(maxallowedBytes.Bytes())*threshold) {
+	if usage >= uint64(float64(maxallowedBytes.Bytes())*threshold) {
 		fmt.Printf("\nThreshold warning!\n")
 		os.Exit(1)
-
 	}
 	os.Exit(0)
-
 }
