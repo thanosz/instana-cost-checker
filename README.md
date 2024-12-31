@@ -50,10 +50,11 @@ Check current month usage and produce a warning if the total ingested data is at
 		(trace), 790 GB
 	
 	Totals:
-	   infra: 1.9 GB
-	  traces: 5.9 TB
+	         infra: 1.9 GB
+	   otlp traces: 5.9 TB
+	  agent traces: 0 B
 	
-	Total Usage for month December: 5.9 TB
+	Total Usage for month December: 5.9 TB (76%)
 	
 	Threshold warning!
 	exit status 1
