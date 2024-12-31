@@ -102,6 +102,7 @@ func main() {
 
 	// Calculate the sum
 	var totalBytesIngestedInfrastructure uint64
+	var totalBytesIngestedOltpTraces uint64
 	var totalBytesIngestedTraces uint64
 
 	var buffer bytes.Buffer
@@ -119,6 +120,9 @@ func main() {
 				totalBytesIngestedInfrastructure += item.Sims
 			case "bytes_ingested_traces_otlp_acceptor":
 				fmt.Fprintf(&buffer, "	(trace), %s\n", humanize.Bytes(item.Sims))
+				totalBytesIngestedOltpTraces += item.Sims
+			case "bytes_ingested_traces_acceptor":
+				fmt.Fprintf(&buffer, "	(trace), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedTraces += item.Sims
 			}
 		}
@@ -129,9 +133,11 @@ func main() {
 		fmt.Println(&buffer)
 	}
 	fmt.Printf("Totals:\n")
-	fmt.Printf("   infra: %s\n", humanize.Bytes(totalBytesIngestedInfrastructure))
-	fmt.Printf("  traces: %s\n", humanize.Bytes(totalBytesIngestedTraces))
-	total := totalBytesIngestedInfrastructure + totalBytesIngestedTraces
+	fmt.Printf("         infra: %s\n", humanize.Bytes(totalBytesIngestedInfrastructure))
+	fmt.Printf("   otlp traces: %s\n", humanize.Bytes(totalBytesIngestedOltpTraces))
+	fmt.Printf("  agent traces: %s\n", humanize.Bytes(totalBytesIngestedTraces))
+
+	total := totalBytesIngestedInfrastructure + totalBytesIngestedOltpTraces + totalBytesIngestedTraces
 	fmt.Printf("\nTotal Usage for month %s: %s\n", time.Month(month), humanize.Bytes(total))
 
 	if total >= uint64(float64(maxallowedBytes.Bytes())*threshold) {
