@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -32,6 +33,7 @@ func main() {
 	var endpoint string
 	var maxallowed string
 	var threshold float64
+	var verbose bool
 
 	current_year, current_month, _ := time.Now().Date()
 
@@ -52,6 +54,7 @@ func main() {
 	flag.StringVar(&endpoint, "endpoint", "", "The endpoint to connect to (e.g. unit-tenant.instana.io, required)")
 	flag.StringVar(&maxallowed, "maxallowed", "", "The maximum entitled data usage in MB, GB or TB (e.g. 7TB, required)")
 	flag.Float64Var(&threshold, "threshold", 0.8, "The percentage to multiply with to generate a warning (optional)")
+	flag.BoolVar(&verbose, "verbose", false, "Verbose output for each day")
 
 	flag.Parse()
 	maxallowed_d, _ := datasize.ParseString(maxallowed)
@@ -103,25 +106,37 @@ func main() {
 	var totalBytesIngestedInfrastructure uint64
 	var totalBytesIngestedTraces uint64
 
+	var buffer bytes.Buffer
 	for _, entry := range data {
+		sec := entry.Time / 1000
+		msec := entry.Time % 1000
+		timestamp := time.Unix(sec, msec*int64(time.Millisecond))
+		fmt.Fprintf(&buffer, "%s\n", timestamp)
+
 		for _, item := range entry.Items {
+			//fmt.Println(time.Unix(sec, msec*int64(time.Millisecond)))
 			switch item.Name {
 			case "bytes_ingested_infrastructure_acceptor":
+				fmt.Fprintf(&buffer, "	(infra), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedInfrastructure += item.Sims
 			case "bytes_ingested_traces_otlp_acceptor":
+				fmt.Fprintf(&buffer, "	(trace), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedTraces += item.Sims
 			}
 		}
 	}
-
 	// Print the results
-	fmt.Printf("Total bytes_ingested_infrastructure_acceptor: %s\n", humanize.Bytes(totalBytesIngestedInfrastructure))
-	fmt.Printf("Total bytes_ingested_traces_otlp_acceptor: %s\n", humanize.Bytes(totalBytesIngestedTraces))
+	if verbose {
+		fmt.Println(&buffer)
+	}
+	fmt.Printf("Totals:\n")
+	fmt.Printf("   infra: %s\n", humanize.Bytes(totalBytesIngestedInfrastructure))
+	fmt.Printf("  traces: %s\n", humanize.Bytes(totalBytesIngestedTraces))
 	total := totalBytesIngestedInfrastructure + totalBytesIngestedTraces
-	fmt.Printf("Total Usage for month (%d): %s\n", month, humanize.Bytes(total))
+	fmt.Printf("\nTotal Usage for month %s: %s\n", time.Month(month), humanize.Bytes(total))
 
 	if total >= uint64(float64(maxallowed_d.Bytes())*threshold) {
-		fmt.Printf("Threshold warning \n")
+		fmt.Printf("\nThreshold warning!\n")
 		os.Exit(1)
 
 	}
