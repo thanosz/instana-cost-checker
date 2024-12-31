@@ -39,10 +39,8 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Printf("\nCheck the amount of data ingested by Instana server and produce a warning if exceeds the specified threshold; returns 1 if threshold exceeded, 0 otherwise.\n")
-
 		fmt.Printf("Example: check current month usage and produce a warning if the total ingested data is at 70%% of the allowed ingested data.\n\n")
 		fmt.Printf("	instana-cost-checker -token TOKEN -endpoint unit-tenant.instana.io -maxallowed 7TB -threshold 0.7\n\n")
-
 		fmt.Printf("Options:\n")
 		flag.PrintDefaults()
 
@@ -55,12 +53,11 @@ func main() {
 	flag.StringVar(&maxallowed, "maxallowed", "", "The maximum entitled data usage in MB, GB or TB (e.g. 7TB, required)")
 	flag.Float64Var(&threshold, "threshold", 0.8, "The percentage to multiply with to generate a warning (optional)")
 	flag.BoolVar(&verbose, "verbose", false, "Verbose output for each day")
-
 	flag.Parse()
-	maxallowed_d, _ := datasize.ParseString(maxallowed)
+	maxallowedBytes, _ := datasize.ParseString(maxallowed)
 	//fmt.Printf("Threshold %d \n", thres.Bytes())
 
-	if month < int(current_month) || year < int(current_year) || len(token) == 0 || len(endpoint) == 0 || maxallowed_d == 0 {
+	if month < 1 || month > 12 || year > int(current_year) || len(token) == 0 || len(endpoint) == 0 || maxallowedBytes == 0 {
 		flag.Usage()
 		os.Exit(0)
 	}
@@ -99,6 +96,7 @@ func main() {
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		fmt.Println("Error parsing JSON:", err)
+		fmt.Println("Response received:", string(body))
 		return
 	}
 
@@ -125,6 +123,7 @@ func main() {
 			}
 		}
 	}
+
 	// Print the results
 	if verbose {
 		fmt.Println(&buffer)
@@ -135,7 +134,7 @@ func main() {
 	total := totalBytesIngestedInfrastructure + totalBytesIngestedTraces
 	fmt.Printf("\nTotal Usage for month %s: %s\n", time.Month(month), humanize.Bytes(total))
 
-	if total >= uint64(float64(maxallowed_d.Bytes())*threshold) {
+	if total >= uint64(float64(maxallowedBytes.Bytes())*threshold) {
 		fmt.Printf("\nThreshold warning!\n")
 		os.Exit(1)
 
