@@ -51,9 +51,10 @@ func main() {
 	flag.Float64Var(&threshold, "threshold", 0.8, "The percentage to multiply with to generate a warning (optional)")
 	flag.BoolVar(&verbose, "verbose", false, "Verbose output for each day")
 	flag.Parse()
+
 	maxallowedBytes, _ := datasize.ParseString(maxallowed)
 
-	if month < 1 || month > 12 || year > int(current_year) || len(token) == 0 || len(endpoint) == 0 || maxallowedBytes == 0 {
+	if month < 1 || month > 12 || year > int(current_year) || len(token) == 0 || len(endpoint) == 0 || maxallowedBytes.Bytes() == 0 {
 		flag.Usage()
 		os.Exit(0)
 	}
@@ -97,40 +98,40 @@ func main() {
 
 	// Calculate the sum
 	var totalBytesIngestedInfrastructure uint64
-	var totalBytesIngestedOltpTraces uint64
+	var totalBytesIngestedOtlpTraces uint64
 	var totalBytesIngestedTraces uint64
+	var dayLog bytes.Buffer
 
-	var buffer bytes.Buffer
 	for _, entry := range data {
 		sec := entry.Time / 1000
 		msec := entry.Time % 1000
 		timestamp := time.Unix(sec, msec*int64(time.Millisecond))
-		fmt.Fprintf(&buffer, "%s\n", timestamp)
+		fmt.Fprintf(&dayLog, "%s\n", timestamp)
 		for _, item := range entry.Items {
 			//fmt.Println(time.Unix(sec, msec*int64(time.Millisecond)))
 			switch item.Name {
 			case "bytes_ingested_infrastructure_acceptor":
-				fmt.Fprintf(&buffer, "	(infra), %s\n", humanize.Bytes(item.Sims))
+				fmt.Fprintf(&dayLog, "	(infra), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedInfrastructure += item.Sims
 			case "bytes_ingested_traces_otlp_acceptor":
-				fmt.Fprintf(&buffer, "	(trace), %s\n", humanize.Bytes(item.Sims))
-				totalBytesIngestedOltpTraces += item.Sims
+				fmt.Fprintf(&dayLog, "	(trace), %s\n", humanize.Bytes(item.Sims))
+				totalBytesIngestedOtlpTraces += item.Sims
 			case "bytes_ingested_traces_acceptor":
-				fmt.Fprintf(&buffer, "	(trace), %s\n", humanize.Bytes(item.Sims))
+				fmt.Fprintf(&dayLog, "	(trace), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedTraces += item.Sims
 			}
 		}
 	}
 	// Print the results
 	if verbose {
-		fmt.Println(&buffer)
+		fmt.Println(&dayLog)
 	}
 	fmt.Printf("Totals:\n")
 	fmt.Printf("         infra: %s\n", humanize.Bytes(totalBytesIngestedInfrastructure))
-	fmt.Printf("   otlp traces: %s\n", humanize.Bytes(totalBytesIngestedOltpTraces))
+	fmt.Printf("   otlp traces: %s\n", humanize.Bytes(totalBytesIngestedOtlpTraces))
 	fmt.Printf("  agent traces: %s\n", humanize.Bytes(totalBytesIngestedTraces))
 
-	usage := totalBytesIngestedInfrastructure + totalBytesIngestedOltpTraces + totalBytesIngestedTraces
+	usage := totalBytesIngestedInfrastructure + totalBytesIngestedOtlpTraces + totalBytesIngestedTraces
 	fmt.Printf("\nTotal Usage for month %s: %s (%d%%)\n", time.Month(month), humanize.Bytes(usage), int(float64(usage)/float64(maxallowedBytes.Bytes())*100))
 
 	if usage >= uint64(float64(maxallowedBytes.Bytes())*threshold) {
