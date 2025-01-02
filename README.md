@@ -8,7 +8,7 @@ Check the amount of data ingested by Instana server and produce a warning if exc
 	  -maxallowed string
 	    	The maximum entitled data usage in MB, GB or TB (e.g. 7TB, required)
 	  -month int
-	    	The month of the year to request data for (optional, skip for current month) (default 12)
+	    	The month of the year to request data for (optional, skip for current month)
 	  -threshold float
 	    	The percentage to multiply with to generate a warning (optional) (default 0.8)
 	  -token string
@@ -16,7 +16,7 @@ Check the amount of data ingested by Instana server and produce a warning if exc
 	  -verbose
 	    	Verbose output for each day
 	  -year int
-	    	The year (optional, skip for current year) (default 2024)
+	    	The year (optional, skip for current year) 
 
 
 ## Example: 
