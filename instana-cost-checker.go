@@ -132,7 +132,7 @@ func main() {
 	fmt.Printf("  agent traces: %s\n", humanize.Bytes(totalBytesIngestedTraces))
 
 	usage := totalBytesIngestedInfrastructure + totalBytesIngestedOtlpTraces + totalBytesIngestedTraces
-	fmt.Printf("\nTotal Usage for month %s: %s (%d%%)\n", time.Month(month), humanize.Bytes(usage), int(float64(usage)/float64(maxallowedBytes.Bytes())*100))
+	fmt.Printf("\nTotal Usage for month %s: %s (%s) (%d%%)\n", time.Month(month), humanize.Bytes(usage), humanize.Comma(int64(usage)), int(float64(usage)/float64(maxallowedBytes.Bytes())*100))
 
 	if usage >= uint64(float64(maxallowedBytes.Bytes())*threshold) {
 		fmt.Printf("\nThreshold warning!\n")
