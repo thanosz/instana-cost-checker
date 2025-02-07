@@ -100,6 +100,9 @@ func main() {
 	var totalBytesIngestedInfrastructure uint64
 	var totalBytesIngestedOtlpTraces uint64
 	var totalBytesIngestedTraces uint64
+	var totalBytesMobile uint64
+	var totalBytesSpans uint64
+	var totalBytesWebsite uint64
 	var dayLog bytes.Buffer
 
 	for _, entry := range data {
@@ -111,14 +114,24 @@ func main() {
 			//fmt.Println(time.Unix(sec, msec*int64(time.Millisecond)))
 			switch item.Name {
 			case "bytes_ingested_infrastructure_acceptor":
-				fmt.Fprintf(&dayLog, "	(infra), %s\n", humanize.Bytes(item.Sims))
+				fmt.Fprintf(&dayLog, "	 (infra), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedInfrastructure += item.Sims
 			case "bytes_ingested_traces_otlp_acceptor":
-				fmt.Fprintf(&dayLog, "	(trace), %s\n", humanize.Bytes(item.Sims))
+				fmt.Fprintf(&dayLog, "	 (trace), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedOtlpTraces += item.Sims
 			case "bytes_ingested_traces_acceptor":
-				fmt.Fprintf(&dayLog, "	(trace), %s\n", humanize.Bytes(item.Sims))
+				fmt.Fprintf(&dayLog, "	 (trace), %s\n", humanize.Bytes(item.Sims))
 				totalBytesIngestedTraces += item.Sims
+
+			case "bytes_ingested_eum_mobile_eum_acceptor":
+				fmt.Fprintf(&dayLog, "  (mobile), %s\n", humanize.Bytes(item.Sims))
+				totalBytesMobile += item.Sims
+			case "bytes_ingested_eum_spans_eum_acceptor":
+				fmt.Fprintf(&dayLog, "   (spans), %s\n", humanize.Bytes(item.Sims))
+				totalBytesSpans += item.Sims
+			case "bytes_ingested_eum_website_eum_acceptor":
+				fmt.Fprintf(&dayLog, " (website), %s\n", humanize.Bytes(item.Sims))
+				totalBytesWebsite += item.Sims
 			}
 		}
 	}
@@ -130,8 +143,11 @@ func main() {
 	fmt.Printf("         infra: %s\n", humanize.Bytes(totalBytesIngestedInfrastructure))
 	fmt.Printf("   otlp traces: %s\n", humanize.Bytes(totalBytesIngestedOtlpTraces))
 	fmt.Printf("  agent traces: %s\n", humanize.Bytes(totalBytesIngestedTraces))
+	fmt.Printf("        mobile: %s\n", humanize.Bytes(totalBytesMobile))
+	fmt.Printf("         spans: %s\n", humanize.Bytes(totalBytesSpans))
+	fmt.Printf("       website: %s\n", humanize.Bytes(totalBytesWebsite))
 
-	usage := totalBytesIngestedInfrastructure + totalBytesIngestedOtlpTraces + totalBytesIngestedTraces
+	usage := totalBytesIngestedInfrastructure + totalBytesIngestedOtlpTraces + totalBytesIngestedTraces + totalBytesMobile + totalBytesSpans + totalBytesWebsite
 	fmt.Printf("\nTotal Usage for month %s: %s (%s) (%d%%)\n", time.Month(month), humanize.Bytes(usage), humanize.Comma(int64(usage)), int(float64(usage)/float64(maxallowedBytes.Bytes())*100))
 
 	if usage >= uint64(float64(maxallowedBytes.Bytes())*threshold) {
